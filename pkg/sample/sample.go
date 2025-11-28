@@ -47,6 +47,11 @@ func ParseSample(line string) (*FMSample, error) {
 			return nil, fmt.Errorf("invalid feature format: %s", parts[i])
 		}
 
+		// 跳过空值
+		if kv[1] == "" {
+			continue
+		}
+
 		value, err := strconv.ParseFloat(kv[1], 64)
 		if err != nil {
 			return nil, fmt.Errorf("invalid feature value: %v", err)
