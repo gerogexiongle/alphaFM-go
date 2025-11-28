@@ -80,7 +80,7 @@ func (p *FTRLPredictor) RunTask(dataBuffer []string) error {
 		}
 
 		score := p.model.GetScore(xForPredict, p.model.MuBias.Wi)
-		results[i] = fmt.Sprintf("%d %v", s.Y, score)
+		results[i] = fmt.Sprintf("%d %.6g", s.Y, score)
 	}
 
 	// 写入结果

@@ -122,25 +122,25 @@ func (u *FTRLModelUnit) IsNonZero() bool {
 
 // String 转为字符串（用于输出模型）
 func (u *FTRLModelUnit) String() string {
-	parts := []string{fmt.Sprintf("%v", u.Wi)}
+	parts := []string{fmt.Sprintf("%.6g", u.Wi)}
 
 	// vi
 	for _, v := range u.Vi {
-		parts = append(parts, fmt.Sprintf("%v", v))
+		parts = append(parts, fmt.Sprintf("%.6g", v))
 	}
 
 	// w_ni, w_zi
-	parts = append(parts, fmt.Sprintf("%v", u.WNi))
-	parts = append(parts, fmt.Sprintf("%v", u.WZi))
+	parts = append(parts, fmt.Sprintf("%.6g", u.WNi))
+	parts = append(parts, fmt.Sprintf("%.6g", u.WZi))
 
 	// v_ni
 	for _, vn := range u.VNi {
-		parts = append(parts, fmt.Sprintf("%v", vn))
+		parts = append(parts, fmt.Sprintf("%.6g", vn))
 	}
 
 	// v_zi
 	for _, vz := range u.VZi {
-		parts = append(parts, fmt.Sprintf("%v", vz))
+		parts = append(parts, fmt.Sprintf("%.6g", vz))
 	}
 
 	return strings.Join(parts, " ")
@@ -318,7 +318,7 @@ func (m *FTRLModel) outputTxtModel(modelPath string) error {
 	defer writer.Flush()
 
 	// 输出bias
-	fmt.Fprintf(writer, "%s %v %v %v\n", BiasFeatureName, m.MuBias.Wi, m.MuBias.WNi, m.MuBias.WZi)
+	fmt.Fprintf(writer, "%s %.6g %.6g %.6g\n", BiasFeatureName, m.MuBias.Wi, m.MuBias.WNi, m.MuBias.WZi)
 
 	// 输出特征
 	for feature, unit := range m.MuMap {
