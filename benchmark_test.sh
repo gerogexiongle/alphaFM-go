@@ -20,9 +20,9 @@ TEST_DATA_DIR="/data/xiongle/data/test/feature"
 BENCHMARK_DIR="$GO_DIR/benchmark_results"
 mkdir -p "$BENCHMARK_DIR"
 
-# 模型文件
-CPP_MODEL="$BENCHMARK_DIR/cpp_model.bin"
-GO_MODEL="$BENCHMARK_DIR/go_model.bin"
+# 模型文件（使用文本格式，完全兼容）
+CPP_MODEL="$BENCHMARK_DIR/cpp_model.txt"
+GO_MODEL="$BENCHMARK_DIR/go_model.txt"
 
 # 预测结果文件
 CPP_PREDICTION="$BENCHMARK_DIR/cpp_prediction.txt"
@@ -31,11 +31,11 @@ GO_PREDICTION="$BENCHMARK_DIR/go_prediction.txt"
 # 性能日志文件
 PERF_LOG="$BENCHMARK_DIR/performance_report.txt"
 
-# 训练参数
-TRAIN_PARAMS="-dim 1,1,4 -core 4 -w_alpha 0.05 -w_beta 1.0 -w_l1 0.1 -w_l2 5.0 -v_alpha 0.05 -v_beta 1.0 -v_l1 0.1 -v_l2 5.0 -init_stdev 0.001"
+# 训练参数（使用文本格式模型）
+TRAIN_PARAMS="-dim 1,1,4 -core 4 -w_alpha 0.05 -w_beta 1.0 -w_l1 0.1 -w_l2 5.0 -v_alpha 0.05 -v_beta 1.0 -v_l1 0.1 -v_l2 5.0 -init_stdev 0.001 -mf txt"
 
-# 预测参数
-PREDICT_PARAMS="-dim 4"
+# 预测参数（使用文本格式模型）
+PREDICT_PARAMS="-dim 4 -mf txt"
 
 echo "Configuration:"
 echo "  C++ Directory: $CPP_DIR"
@@ -441,7 +441,7 @@ echo "Results saved in: $BENCHMARK_DIR"
 echo "  - Performance report: performance_report.txt"
 echo "  - Training logs: cpp_train.log, go_train.log"
 echo "  - Prediction logs: cpp_predict.log, go_predict.log"
-echo "  - Models: cpp_model.bin, go_model.bin"
+echo "  - Models: cpp_model.txt, go_model.txt (text format)"
 echo "  - Predictions: cpp_prediction.txt, go_prediction.txt"
 echo
 

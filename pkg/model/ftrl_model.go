@@ -292,8 +292,74 @@ func (m *FTRLModel) loadTxtModel(modelPath string) error {
 
 // loadBinModel 加载二进制模型
 func (m *FTRLModel) loadBinModel(modelPath string) error {
-	// 简化版本，完整实现需要处理float32/float64
-	return fmt.Errorf("binary model loading not fully implemented yet")
+	mbf := NewModelBinFile()
+	if err := mbf.OpenForRead(modelPath); err != nil {
+		return err
+	}
+	defer mbf.Close()
+
+	info := mbf.GetInfo()
+	
+	// 验证factor_num
+	if info.FactorNum != uint64(m.FactorNum) {
+		return fmt.Errorf("factor_num mismatch: model=%d, expected=%d", info.FactorNum, m.FactorNum)
+	}
+
+	// 读取bias
+	feaName, err := mbf.ReadOneFea()
+	if err != nil {
+		return fmt.Errorf("failed to read bias feature name: %v", err)
+	}
+	if feaName != BiasFeatureName {
+		return fmt.Errorf("expected bias, got %s", feaName)
+	}
+
+	// 根据number_byte_len读取bias unit
+	m.MuBias = &FTRLModelUnit{}
+	if info.NumByteLen == 8 {
+		// double
+		if err := mbf.ReadOneUnitDouble(m.MuBias, 0); err != nil {
+			return fmt.Errorf("failed to read bias unit: %v", err)
+		}
+	} else if info.NumByteLen == 4 {
+		// float
+		if err := mbf.ReadOneUnitFloat(m.MuBias, 0); err != nil {
+			return fmt.Errorf("failed to read bias unit: %v", err)
+		}
+	} else {
+		return fmt.Errorf("unsupported number_byte_len: %d", info.NumByteLen)
+	}
+
+	// 读取特征
+	for {
+		feaName, err := mbf.ReadOneFea()
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			return fmt.Errorf("failed to read feature name: %v", err)
+		}
+
+		unit := &FTRLModelUnit{
+			Vi:  make([]float64, m.FactorNum),
+			VNi: make([]float64, m.FactorNum),
+			VZi: make([]float64, m.FactorNum),
+		}
+
+		if info.NumByteLen == 8 {
+			if err := mbf.ReadOneUnitDouble(unit, m.FactorNum); err != nil {
+				return fmt.Errorf("failed to read unit for %s: %v", feaName, err)
+			}
+		} else if info.NumByteLen == 4 {
+			if err := mbf.ReadOneUnitFloat(unit, m.FactorNum); err != nil {
+				return fmt.Errorf("failed to read unit for %s: %v", feaName, err)
+			}
+		}
+
+		m.MuMap[feaName] = unit
+	}
+
+	return nil
 }
 
 // OutputModel 输出模型
@@ -330,8 +396,29 @@ func (m *FTRLModel) outputTxtModel(modelPath string) error {
 
 // outputBinModel 输出二进制模型
 func (m *FTRLModel) outputBinModel(modelPath string) error {
-	// 简化版本
-	return fmt.Errorf("binary model output not fully implemented yet")
+	// 计算unit长度: wi(8) + w_ni(8) + w_zi(8) + vi(8*k) + v_ni(8*k) + v_zi(8*k)
+	unitLen := uint64(3*8 + 3*m.FactorNum*8)
+
+	mbf := NewModelBinFile()
+	if err := mbf.OpenForWrite(modelPath, 8, uint64(m.FactorNum), unitLen); err != nil {
+		return err
+	}
+	defer mbf.Close()
+
+	// 写入bias (factor_num = 0，所以没有v向量)
+	if err := mbf.WriteOneFeaUnitDouble(BiasFeatureName, m.MuBias, 0, true); err != nil {
+		return fmt.Errorf("failed to write bias: %v", err)
+	}
+
+	// 写入特征 (factor_num = m.FactorNum)
+	for feature, unit := range m.MuMap {
+		isNonZero := unit.IsNonZero()
+		if err := mbf.WriteOneFeaUnitDouble(feature, unit, m.FactorNum, isNonZero); err != nil {
+			return fmt.Errorf("failed to write feature %s: %v", feature, err)
+		}
+	}
+
+	return nil
 }
 
 // PredictModel 预测模型（简化版，只包含wi和vi）
@@ -457,6 +544,93 @@ func (m *PredictModel) loadTxtModel(modelPath string) error {
 
 // loadBinModel 加载二进制模型
 func (m *PredictModel) loadBinModel(modelPath string) error {
-	return fmt.Errorf("binary model loading not fully implemented yet")
+	mbf := NewModelBinFile()
+	if err := mbf.OpenForRead(modelPath); err != nil {
+		return err
+	}
+	defer mbf.Close()
+
+	info := mbf.GetInfo()
+	
+	// 验证factor_num
+	if info.FactorNum != uint64(m.FactorNum) {
+		return fmt.Errorf("factor_num mismatch: model=%d, expected=%d", info.FactorNum, m.FactorNum)
+	}
+
+	// 读取bias
+	feaName, err := mbf.ReadOneFea()
+	if err != nil {
+		return fmt.Errorf("failed to read bias feature name: %v", err)
+	}
+	if feaName != BiasFeatureName {
+		return fmt.Errorf("expected bias, got %s", feaName)
+	}
+
+	// 读取bias unit（预测模型只需要wi，不需要n和z）
+	biasUnit := &FTRLModelUnit{}
+	if info.NumByteLen == 8 {
+		if err := mbf.ReadOneUnitDouble(biasUnit, 0); err != nil {
+			return fmt.Errorf("failed to read bias unit: %v", err)
+		}
+	} else if info.NumByteLen == 4 {
+		if err := mbf.ReadOneUnitFloat(biasUnit, 0); err != nil {
+			return fmt.Errorf("failed to read bias unit: %v", err)
+		}
+	} else {
+		return fmt.Errorf("unsupported number_byte_len: %d", info.NumByteLen)
+	}
+	
+	m.MuBias = &PredictModelUnit{
+		Wi: biasUnit.Wi,
+		Vi: make([]float64, 0),
+	}
+
+	// 读取特征
+	for {
+		feaName, err := mbf.ReadOneFea()
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			return fmt.Errorf("failed to read feature name: %v", err)
+		}
+
+		fullUnit := &FTRLModelUnit{
+			Vi:  make([]float64, m.FactorNum),
+			VNi: make([]float64, m.FactorNum),
+			VZi: make([]float64, m.FactorNum),
+		}
+
+		if info.NumByteLen == 8 {
+			if err := mbf.ReadOneUnitDouble(fullUnit, m.FactorNum); err != nil {
+				return fmt.Errorf("failed to read unit for %s: %v", feaName, err)
+			}
+		} else if info.NumByteLen == 4 {
+			if err := mbf.ReadOneUnitFloat(fullUnit, m.FactorNum); err != nil {
+				return fmt.Errorf("failed to read unit for %s: %v", feaName, err)
+			}
+		}
+
+		// 检查是否非零
+		isNonZero := fullUnit.Wi != 0.0
+		if !isNonZero {
+			for _, v := range fullUnit.Vi {
+				if v != 0.0 {
+					isNonZero = true
+					break
+				}
+			}
+		}
+
+		// 只加载非零特征
+		if isNonZero {
+			m.MuMap[feaName] = &PredictModelUnit{
+				Wi: fullUnit.Wi,
+				Vi: fullUnit.Vi,
+			}
+		}
+	}
+
+	return nil
 }
 

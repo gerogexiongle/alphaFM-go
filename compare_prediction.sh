@@ -7,7 +7,7 @@ set -e
 
 echo "=========================================================="
 echo "  alphaFM Prediction Comparison: C++ vs Go"
-echo "  Using the same model (go_model.bin)"
+echo "  Using the same model (go_model.txt)"
 echo "=========================================================="
 echo
 
@@ -16,15 +16,15 @@ GO_DIR="/data/xiongle/alphaFM-go"
 BENCHMARK_DIR="$GO_DIR/benchmark_results"
 TEST_DATA_DIR="/data/xiongle/data/test/feature"
 
-# 使用Go训练的模型
-MODEL="$BENCHMARK_DIR/go_model.bin"
+# 使用Go训练的模型（文本格式）
+MODEL="$BENCHMARK_DIR/go_model.txt"
 
 # 预测结果文件
 CPP_PRED="$BENCHMARK_DIR/cpp_pred_from_go_model.txt"
 GO_PRED="$BENCHMARK_DIR/go_pred_from_go_model.txt"
 
-# 预测参数
-PREDICT_PARAMS="-dim 4 -core 4"
+# 预测参数（使用文本格式）
+PREDICT_PARAMS="-dim 4 -core 4 -mf txt"
 
 echo "Configuration:"
 echo "  Model File:     $MODEL"
@@ -248,7 +248,7 @@ echo
 echo "✅ Test Completed Successfully!"
 echo
 echo "Key Findings:"
-echo "  - Used the same model: go_model.bin"
+echo "  - Used the same model: go_model.txt (text format)"
 echo "  - Predicted the same test set: $CPP_COUNT samples"
 echo "  - ✅ C++ and Go prediction logic is equivalent!"
 echo "  - Minor differences due to floating-point precision (< 1e-6)"
