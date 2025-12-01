@@ -40,10 +40,10 @@ echo
 # 显示可用命令
 echo "🚀 可用命令:"
 echo "-------------------"
-echo "1. make             - 编译项目"
-echo "2. make clean       - 清理编译产物"
-echo "3. ./test.sh        - 运行测试"
-echo "4. ./compare_test.sh - C++与Go版本对比"
+echo "1. make                   - 编译项目"
+echo "2. make clean             - 清理编译产物"
+echo "3. ./scripts/test.sh      - 运行测试"
+echo "4. ./scripts/compare_test.sh - C++与Go版本对比"
 echo
 
 # 显示使用示例
@@ -64,12 +64,12 @@ echo "✅ 项目已完成并可以使用！"
 echo "=================================================="
 echo
 echo "📚 查看文档:"
-echo "  - README.md           用户文档"
-echo "  - IMPLEMENTATION.md   实现说明"
-echo "  - DELIVERY.md         交付文档"
+echo "  - README.md                     用户文档"
+echo "  - docs/IMPLEMENTATION.md        实现说明"
+echo "  - docs/DELIVERY.md              交付文档"
 echo
 echo "🧪 运行测试:"
-echo "  ./test.sh"
+echo "  ./scripts/test.sh"
 echo
 
 

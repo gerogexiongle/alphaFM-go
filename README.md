@@ -271,16 +271,32 @@ alphaFM-go/
 │   ├── lock/              # 锁管理
 │   ├── mem/               # 内存池
 │   └── utils/             # 工具函数
-└── bin/                   # 编译输出
+├── bin/                   # 编译输出
+├── docs/                  # 文档目录
+│   ├── IMPLEMENTATION.md
+│   ├── DELIVERY.md
+│   ├── TEST_REPORT.md
+│   ├── BENCHMARK.md
+│   └── ...
+├── scripts/               # 工具脚本
+│   ├── test.sh
+│   ├── demo.sh
+│   ├── compare_test.sh
+│   └── ...
+├── benchmark_test.sh      # 基准测试脚本（主要）
+└── README.md              # 项目说明
 ```
 
 ## 📖 文档
 
-- [IMPLEMENTATION.md](IMPLEMENTATION.md) - 详细实现说明
-- [DELIVERY.md](DELIVERY.md) - 项目交付文档
-- [TEST_REPORT.md](TEST_REPORT.md) - 测试报告
-- [BENCHMARK.md](BENCHMARK.md) - 基准测试文档（新）
-- [STREAMING_OPTIMIZATION.md](STREAMING_OPTIMIZATION.md) - 流式处理优化（新）
+- [IMPLEMENTATION.md](docs/IMPLEMENTATION.md) - 详细实现说明
+- [DELIVERY.md](docs/DELIVERY.md) - 项目交付文档
+- [TEST_REPORT.md](docs/TEST_REPORT.md) - 测试报告
+- [BENCHMARK.md](docs/BENCHMARK.md) - 基准测试文档（新）
+- [STREAMING_OPTIMIZATION.md](docs/STREAMING_OPTIMIZATION.md) - 流式处理优化（新）
+- [CPP_GO_DETAILED_COMPARISON_REPORT.md](docs/CPP_GO_DETAILED_COMPARISON_REPORT.md) - C++与Go详细对比报告
+- [CPP_GO_MULTITHREAD_ANALYSIS.md](docs/CPP_GO_MULTITHREAD_ANALYSIS.md) - C++与Go多线程分析
+- [BINARY_MODEL_IMPLEMENTATION.md](docs/BINARY_MODEL_IMPLEMENTATION.md) - 二进制模型实现文档
 - [原C++版本文档](https://github.com/CastellanZhang/alphaFM)
 
 ## 🧪 测试
@@ -289,13 +305,13 @@ alphaFM-go/
 
 ```bash
 # 快速功能测试（小数据集）
-./test.sh
+./scripts/test.sh
 
 # 对比C++和Go版本（小数据集）
-./compare_test.sh
+./scripts/compare_test.sh
 
 # 演示
-./demo.sh
+./scripts/demo.sh
 ```
 
 ### 基准测试（大规模真实数据）
@@ -324,12 +340,12 @@ alphaFM-go/
 
 ```bash
 # 测试数据格式转换和流式处理
-./test_data_preprocessing.sh
+./scripts/test_data_preprocessing.sh
 ```
 
 详细说明请参考：
-- [BENCHMARK.md](BENCHMARK.md) - 基准测试完整文档
-- [STREAMING_OPTIMIZATION.md](STREAMING_OPTIMIZATION.md) - 流式处理优化说明
+- [BENCHMARK.md](docs/BENCHMARK.md) - 基准测试完整文档
+- [STREAMING_OPTIMIZATION.md](docs/STREAMING_OPTIMIZATION.md) - 流式处理优化说明
 
 ## 🤝 与C++版本的兼容性
 

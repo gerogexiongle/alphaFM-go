@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Apr 15 11:40:57 2020
-
-@author: jamesyzhang
+""·
 @计算auc
 """
 
