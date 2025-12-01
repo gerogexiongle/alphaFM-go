@@ -77,7 +77,7 @@ make
 
 ```bash
 # 运行测试脚本
-./test.sh
+./scripts/test.sh
 
 # 手动测试
 cat test_data.txt | ./bin/fm_train -m model.txt -dim 1,1,4 -core 2
