@@ -62,7 +62,10 @@ if [ "$CPP_COUNT" -ne "$GO_COUNT" ]; then
 fi
 
 # 检查label对齐
-LABEL_DIFF_COUNT=$(paste <(awk '{print $1}' "$CPP_PRED") <(awk '{print $1}' "$GO_PRED") | awk '$1 != $2 {count++} END {print count+0}')
+LABEL_DIFF_COUNT=$(awk '{print $1}' "$CPP_PRED" > /tmp/cpp_labels_$$.txt && \
+    awk '{print $1}' "$GO_PRED" > /tmp/go_labels_$$.txt && \
+    paste /tmp/cpp_labels_$$.txt /tmp/go_labels_$$.txt | awk '$1 != $2 {count++} END {print count+0}' && \
+    rm -f /tmp/cpp_labels_$$.txt /tmp/go_labels_$$.txt)
 
 echo "  Total samples:    $CPP_COUNT"
 echo "  Label mismatches: $LABEL_DIFF_COUNT"
@@ -79,9 +82,12 @@ else
     
     echo
     echo "Sample mismatches (first 10):"
-    paste -d' ' <(awk '{print NR, $1}' "$CPP_PRED") <(awk '{print $1}' "$GO_PRED") | awk '$2 != $3 {
+    awk '{print NR, $1}' "$CPP_PRED" > /tmp/cpp_pred_numbered_$$.txt
+    awk '{print $1}' "$GO_PRED" > /tmp/go_pred_only_$$.txt
+    paste -d' ' /tmp/cpp_pred_numbered_$$.txt /tmp/go_pred_only_$$.txt | awk '$2 != $3 {
         printf "    Line %d: C++ label=%s, Go label=%s\n", $1, $2, $3;
     }' | head -10
+    rm -f /tmp/cpp_pred_numbered_$$.txt /tmp/go_pred_only_$$.txt
 fi
 
 echo

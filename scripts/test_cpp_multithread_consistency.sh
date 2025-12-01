@@ -72,7 +72,9 @@ echo
 # Run1 vs Run2
 echo "Run1 vs Run2:"
 echo "----------------------------------------"
-DIFF_12=$(paste <(awk '{print $1}' "$CPP_PRED_RUN1") <(awk '{print $1}' "$CPP_PRED_RUN2") | awk '$1 != $2 {count++} END {print count+0}')
+awk '{print $1}' "$CPP_PRED_RUN1" > /tmp/run1_labels_$$.txt
+awk '{print $1}' "$CPP_PRED_RUN2" > /tmp/run2_labels_$$.txt
+DIFF_12=$(paste /tmp/run1_labels_$$.txt /tmp/run2_labels_$$.txt | awk '$1 != $2 {count++} END {print count+0}')
 echo "  Label mismatches: $DIFF_12"
 
 if [ "$DIFF_12" -eq 0 ]; then
@@ -82,16 +84,21 @@ else
     echo "  ⚠️  Label alignment: ${MATCH_PERCENT}%"
     
     echo "  Sample mismatches (first 10):"
-    paste -d' ' <(awk '{print NR, $1}' "$CPP_PRED_RUN1") <(awk '{print $1}' "$CPP_PRED_RUN2") | awk '$2 != $3 {
+    awk '{print NR, $1}' "$CPP_PRED_RUN1" > /tmp/run1_numbered_$$.txt
+    paste -d' ' /tmp/run1_numbered_$$.txt /tmp/run2_labels_$$.txt | awk '$2 != $3 {
         printf "    Line %d: Run1=%s, Run2=%s\n", $1, $2, $3;
     }' | head -10
+    rm -f /tmp/run1_numbered_$$.txt
 fi
+rm -f /tmp/run1_labels_$$.txt /tmp/run2_labels_$$.txt
 echo
 
 # Run2 vs Run3
 echo "Run2 vs Run3:"
 echo "----------------------------------------"
-DIFF_23=$(paste <(awk '{print $1}' "$CPP_PRED_RUN2") <(awk '{print $1}' "$CPP_PRED_RUN3") | awk '$1 != $2 {count++} END {print count+0}')
+awk '{print $1}' "$CPP_PRED_RUN2" > /tmp/run2_labels_$$.txt
+awk '{print $1}' "$CPP_PRED_RUN3" > /tmp/run3_labels_$$.txt
+DIFF_23=$(paste /tmp/run2_labels_$$.txt /tmp/run3_labels_$$.txt | awk '$1 != $2 {count++} END {print count+0}')
 echo "  Label mismatches: $DIFF_23"
 
 if [ "$DIFF_23" -eq 0 ]; then
@@ -101,16 +108,21 @@ else
     echo "  ⚠️  Label alignment: ${MATCH_PERCENT}%"
     
     echo "  Sample mismatches (first 10):"
-    paste -d' ' <(awk '{print NR, $1}' "$CPP_PRED_RUN2") <(awk '{print $1}' "$CPP_PRED_RUN3") | awk '$2 != $3 {
+    awk '{print NR, $1}' "$CPP_PRED_RUN2" > /tmp/run2_numbered_$$.txt
+    paste -d' ' /tmp/run2_numbered_$$.txt /tmp/run3_labels_$$.txt | awk '$2 != $3 {
         printf "    Line %d: Run2=%s, Run3=%s\n", $1, $2, $3;
     }' | head -10
+    rm -f /tmp/run2_numbered_$$.txt
 fi
+rm -f /tmp/run2_labels_$$.txt /tmp/run3_labels_$$.txt
 echo
 
 # Run1 vs Run3
 echo "Run1 vs Run3:"
 echo "----------------------------------------"
-DIFF_13=$(paste <(awk '{print $1}' "$CPP_PRED_RUN1") <(awk '{print $1}' "$CPP_PRED_RUN3") | awk '$1 != $2 {count++} END {print count+0}')
+awk '{print $1}' "$CPP_PRED_RUN1" > /tmp/run1_labels_$$.txt
+awk '{print $1}' "$CPP_PRED_RUN3" > /tmp/run3_labels_$$.txt
+DIFF_13=$(paste /tmp/run1_labels_$$.txt /tmp/run3_labels_$$.txt | awk '$1 != $2 {count++} END {print count+0}')
 echo "  Label mismatches: $DIFF_13"
 
 if [ "$DIFF_13" -eq 0 ]; then
@@ -120,10 +132,13 @@ else
     echo "  ⚠️  Label alignment: ${MATCH_PERCENT}%"
     
     echo "  Sample mismatches (first 10):"
-    paste -d' ' <(awk '{print NR, $1}' "$CPP_PRED_RUN1") <(awk '{print $1}' "$CPP_PRED_RUN3") | awk '$2 != $3 {
+    awk '{print NR, $1}' "$CPP_PRED_RUN1" > /tmp/run1_numbered_$$.txt
+    paste -d' ' /tmp/run1_numbered_$$.txt /tmp/run3_labels_$$.txt | awk '$2 != $3 {
         printf "    Line %d: Run1=%s, Run3=%s\n", $1, $2, $3;
     }' | head -10
+    rm -f /tmp/run1_numbered_$$.txt
 fi
+rm -f /tmp/run1_labels_$$.txt /tmp/run3_labels_$$.txt
 echo
 
 # 结论

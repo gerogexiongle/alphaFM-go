@@ -43,16 +43,23 @@ fi
 echo "First 10 lines label comparison:"
 echo "  Line | C++ Label | Go Label | Match?"
 echo "  -----|-----------|----------|--------"
-paste <(awk '{print $1}' "$CPP_PRED" | head -10) <(awk '{print $1}' "$GO_PRED" | head -10) | awk '{
+awk '{print $1}' "$CPP_PRED" | head -10 > /tmp/cpp_labels_head_$$.txt
+awk '{print $1}' "$GO_PRED" | head -10 > /tmp/go_labels_head_$$.txt
+paste /tmp/cpp_labels_head_$$.txt /tmp/go_labels_head_$$.txt | awk '{
+
     match_symbol = ($1 == $2) ? "✓" : "✗";
     printf "  %4d | %9s | %8s | %s\n", NR, $1, $2, match_symbol;
 }'
+rm -f /tmp/cpp_labels_head_$$.txt /tmp/go_labels_head_$$.txt
 
 echo
 
 # 完整label对比
 echo "Full label alignment check..."
-LABEL_DIFF_COUNT=$(paste <(awk '{print $1}' "$CPP_PRED") <(awk '{print $1}' "$GO_PRED") | awk '$1 != $2 {count++} END {print count+0}')
+awk '{print $1}' "$CPP_PRED" > /tmp/cpp_labels_full_$$.txt
+awk '{print $1}' "$GO_PRED" > /tmp/go_labels_full_$$.txt
+LABEL_DIFF_COUNT=$(paste /tmp/cpp_labels_full_$$.txt /tmp/go_labels_full_$$.txt | awk '$1 != $2 {count++} END {print count+0}')
+rm -f /tmp/cpp_labels_full_$$.txt /tmp/go_labels_full_$$.txt
 
 echo "Results:"
 echo "  Total samples:     $CPP_LINES"
@@ -70,9 +77,12 @@ else
     echo "  ⚠️  Label alignment: ${MATCH_PERCENT}%"
     echo
     echo "Sample mismatches (first 20):"
-    paste -d' ' <(awk '{print NR, $1}' "$CPP_PRED") <(awk '{print $1}' "$GO_PRED") | awk '$2 != $3 {
+    awk '{print NR, $1}' "$CPP_PRED" > /tmp/cpp_labels_numbered_$$.txt
+    awk '{print $1}' "$GO_PRED" > /tmp/go_labels_only_$$.txt
+    paste -d' ' /tmp/cpp_labels_numbered_$$.txt /tmp/go_labels_only_$$.txt | awk '$2 != $3 {
         printf "    Line %d: C++ label=%s, Go label=%s\n", $1, $2, $3;
     }' | head -20
+    rm -f /tmp/cpp_labels_numbered_$$.txt /tmp/go_labels_only_$$.txt
     echo
     echo "⚠️  WARNING: Labels are not aligned!"
     echo "This could mean:"
