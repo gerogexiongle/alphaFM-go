@@ -17,6 +17,7 @@
 |---------|------|---------|
 | [BENCHMARK.md](BENCHMARK.md) | 基准测试文档 | 性能分析师、运维 |
 | [TEST_REPORT.md](TEST_REPORT.md) | 测试报告 | 测试工程师、QA |
+| [MULTITHREAD_DETERMINISM_ANALYSIS.md](MULTITHREAD_DETERMINISM_ANALYSIS.md) | 多线程确定性分析 | 技术决策者、架构师 |
 | [CPP_GO_DETAILED_COMPARISON_REPORT.md](CPP_GO_DETAILED_COMPARISON_REPORT.md) | C++与Go详细对比报告 | 技术决策者 |
 | [CPP_GO_MULTITHREAD_ANALYSIS.md](CPP_GO_MULTITHREAD_ANALYSIS.md) | C++与Go多线程分析 | 性能工程师 |
 

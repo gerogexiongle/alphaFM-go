@@ -24,6 +24,7 @@
 |---------|---------|------|
 | `test_binary_model.sh` | 二进制模型测试 | 测试二进制模型的保存和加载 |
 | `test_cpp_multithread_consistency.sh` | C++多线程一致性测试 | 验证C++版本多线程的一致性 |
+| `test_go_multithread_consistency.sh` | Go多线程一致性测试 | 验证Go版本多线程的一致性 |
 | `test_single_thread_predict.sh` | 单线程预测测试 | 测试单线程预测功能 |
 | `test_seed.sh` | 随机种子测试 | 测试随机种子对结果的影响 |
 | `test_data_preprocessing.sh` | 数据预处理测试 | 测试数据格式转换和流式处理 |

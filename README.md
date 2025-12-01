@@ -31,12 +31,14 @@
 - ⚖️ **训练速度相同** - 316秒 vs 317秒（0.3%差异）
 - ✅ **结果完全一致** - 341万预测零误差
 - 📦 **模型格式统一** - 2.8MB vs 2.8MB（精度对齐后）
+- 🎯 **输出完全确定** - 多线程下输出顺序100%可重现（C++版本存在乱序）
 
 **适用场景**：
 - 🎯 **在线预测服务** - 预测速度快40%，响应更快
 - 📊 **高并发场景** - goroutine轻量级，支持更多并发
 - 🔧 **快速迭代** - 代码简洁，易于维护和扩展
 - 🌐 **云原生部署** - 容器友好，资源利用率高
+- 🎲 **批量预测** - 多线程输出确定，便于结果关联和验证
 
 ## ✨ 核心特性
 
@@ -239,6 +241,7 @@ label score
 | **预测吞吐** | 29,211/s | 48,150/s | 🏆 **Go** (快65%) |
 | **结果准确性** | ✅ | ✅ | ⚖️ 完全一致 |
 | **模型大小** | 2.8MB | 2.8MB | ⚖️ 完全一致 |
+| **多线程确定性** | ❌ 乱序 | ✅ 确定 | 🏆 **Go** |
 | **代码可维护性** | - | - | 🏆 Go |
 
 **测试结论**：
@@ -294,6 +297,7 @@ alphaFM-go/
 - [TEST_REPORT.md](docs/TEST_REPORT.md) - 测试报告
 - [BENCHMARK.md](docs/BENCHMARK.md) - 基准测试文档（新）
 - [STREAMING_OPTIMIZATION.md](docs/STREAMING_OPTIMIZATION.md) - 流式处理优化（新）
+- [MULTITHREAD_DETERMINISM_ANALYSIS.md](docs/MULTITHREAD_DETERMINISM_ANALYSIS.md) - 多线程确定性分析（重要）
 - [CPP_GO_DETAILED_COMPARISON_REPORT.md](docs/CPP_GO_DETAILED_COMPARISON_REPORT.md) - C++与Go详细对比报告
 - [CPP_GO_MULTITHREAD_ANALYSIS.md](docs/CPP_GO_MULTITHREAD_ANALYSIS.md) - C++与Go多线程分析
 - [BINARY_MODEL_IMPLEMENTATION.md](docs/BINARY_MODEL_IMPLEMENTATION.md) - 二进制模型实现文档
