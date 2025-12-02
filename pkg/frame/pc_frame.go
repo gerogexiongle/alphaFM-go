@@ -62,6 +62,12 @@ func (f *PCFrame) producer(reader io.Reader) {
 	defer close(f.buffer)
 
 	scanner := bufio.NewScanner(reader)
+	// 设置更大的缓冲区 (10MB) 以支持超长特征行
+	// 机器学习数据中，单行可能包含数万个特征
+	const maxScanTokenSize = 10 * 1024 * 1024 // 10MB
+	buf := make([]byte, maxScanTokenSize)
+	scanner.Buffer(buf, maxScanTokenSize)
+
 	lineNum := 0
 	batch := make([]string, 0, f.bufSize)
 
