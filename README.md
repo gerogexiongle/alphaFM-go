@@ -53,6 +53,7 @@
 | 文本模型 | 可读的模型格式 | ✅ |
 | 二进制模型 | 快速加载 | ⚠️ 基础实现 |
 | 流式处理 | 管道输入，无需全部加载 | ✅ |
+| **SIMD优化** | **向量化加速（可选）** | **✅ 新增** |
 
 ## 🚀 快速开始
 
@@ -67,13 +68,16 @@ go version
 
 ```bash
 cd /data/xiongle/alphaFM-go
+
+# 编译所有工具（自动下载依赖）
 make
 ```
 
-编译后在 `bin/` 目录生成3个可执行文件：
+编译后在 `bin/` 目录生成4个可执行文件：
 - `fm_train` - 训练程序
 - `fm_predict` - 预测程序  
 - `model_bin_tool` - 模型工具
+- `simd_benchmark` - SIMD性能测试工具
 
 ### 快速测试
 
@@ -232,9 +236,11 @@ label score
 | 标准差 | 0.000000 | 无偏差 |
 | 平均绝对误差 | 0.000000 | 341万预测完全相同 |
 
-### 综合评价
+### 综合评价 (dim=4, 基础对比)
 
-| 维度 | C++ | Go | 胜者 |
+> **测试配置**：dim=4, 4线程, 341万样本
+
+| 指标 | C++ | Go | 胜者 |
 |------|-----|-----|------|
 | **训练速度** | 316秒 | 317秒 | ⚖️ 平手 |
 | **预测速度** | 117秒 | 71秒 | 🏆 **Go** (快39%) |
@@ -244,7 +250,7 @@ label score
 | **多线程确定性** | ❌ 乱序 | ✅ 确定 | 🏆 **Go** |
 | **代码可维护性** | - | - | 🏆 Go |
 
-**测试结论**：
+**测试结论 (dim=4)**：
 - ✅ **训练性能持平** - Go版本与C++版本训练速度几乎相同（0.3%差异）
 - 🚀 **预测性能卓越** - Go版本预测速度快39%，吞吐量高65%
 - 🎯 **结果完全一致** - 341万预测结果与C++版本完全相同，零误差
@@ -258,6 +264,50 @@ label score
   - 更好的 I/O 处理
 - ⚖️ **训练持平** 说明：Go 的重构没有性能损失
 - 📊 **吞吐量高65%** 表明：Go 更适合高并发预测服务
+
+### 高维度 SIMD/BLAS 优化测试 (dim=64)
+
+在 **dim=64** 的高维度场景下，Go 版本支持 SIMD/BLAS 优化，进一步提升性能。
+
+#### 测试环境
+- 数据集：相同真实数据集（训练集 + 测试集 341 万样本）
+- 隐向量维度：dim=64
+- 线程数：4
+
+#### Go Scalar vs BLAS 模式对比
+
+| 指标 | Scalar 模式 | BLAS 模式 (优化后) | 提升 |
+|------|-------------|-------------------|------|
+| **Go 训练时间** | 861s | 637s | **26% 更快** ⬆️ |
+| **Go 预测时间** | 323s | 72s | **78% 更快** ⬆️⬆️ |
+| **Go 模型大小** | 33M | 32M | 略小 |
+| **预测准确性** | ✅ | ✅ | 完全一致 |
+
+#### C++ vs Go (dim=64) 对比
+
+| 指标 | C++ | Go (Scalar) | Go (BLAS) | 最佳 |
+|------|-----|-------------|-----------|------|
+| **训练时间** | 1037s | 861s (0.83x) | 637s (0.60x) | 🏆 **Go BLAS** |
+| **预测时间** | 441s | 323s (0.73x) | 72s (0.16x) | 🏆 **Go BLAS** |
+| **预测吞吐** | 7,752/s | 10,584/s | 47,480/s | 🏆 **Go BLAS** |
+
+#### 结论
+
+- 🚀 **BLAS 优化显著**：在 dim=64 下，Go BLAS 模式比 Scalar 模式快 26%（训练）和 78%（预测）
+- 🏆 **Go BLAS vs C++**：训练快 **40%**，预测快 **6 倍**！
+- ✅ **结果一致**：所有模式的预测结果完全一致（Mean Difference = 0.000000）
+- 💡 **推荐**：高维度场景（dim≥64）建议使用 `-simd blas` 参数启用 BLAS 优化
+
+#### 使用方法
+
+```bash
+# Scalar 模式（默认，适合低维度 dim≤32）
+./bin/fm_train -dim 1,1,64 -m model.txt ...
+
+# BLAS 模式（推荐高维度 dim≥64）
+./bin/fm_train -dim 1,1,64 -simd blas -m model.txt ...
+./bin/fm_predict -dim 64 -simd blas -m model.txt -out result.txt
+```
 
 ## 🏗️ 项目结构
 
@@ -295,11 +345,11 @@ alphaFM-go/
 - [IMPLEMENTATION.md](docs/IMPLEMENTATION.md) - 详细实现说明
 - [DELIVERY.md](docs/DELIVERY.md) - 项目交付文档
 - [TEST_REPORT.md](docs/TEST_REPORT.md) - 测试报告
-- [BENCHMARK.md](docs/BENCHMARK.md) - 基准测试文档（新）
-- [STREAMING_OPTIMIZATION.md](docs/STREAMING_OPTIMIZATION.md) - 流式处理优化（新）
-- [MULTITHREAD_DETERMINISM_ANALYSIS.md](docs/MULTITHREAD_DETERMINISM_ANALYSIS.md) - 多线程确定性分析（重要）
+- [BENCHMARK.md](docs/BENCHMARK.md) - 基准测试文档
+- [SIMD_GUIDE.md](docs/SIMD_GUIDE.md) - **SIMD/BLAS 优化指南（重要）**
+- [STREAMING_OPTIMIZATION.md](docs/STREAMING_OPTIMIZATION.md) - 流式处理优化
+- [MULTITHREAD_DETERMINISM_ANALYSIS.md](docs/MULTITHREAD_DETERMINISM_ANALYSIS.md) - 多线程确定性分析
 - [CPP_GO_DETAILED_COMPARISON_REPORT.md](docs/CPP_GO_DETAILED_COMPARISON_REPORT.md) - C++与Go详细对比报告
-- [CPP_GO_MULTITHREAD_ANALYSIS.md](docs/CPP_GO_MULTITHREAD_ANALYSIS.md) - C++与Go多线程分析
 - [BINARY_MODEL_IMPLEMENTATION.md](docs/BINARY_MODEL_IMPLEMENTATION.md) - 二进制模型实现文档
 - [原C++版本文档](https://github.com/CastellanZhang/alphaFM)
 

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/xiongle/alphaFM-go/pkg/simd"
 	"github.com/xiongle/alphaFM-go/pkg/utils"
 )
 
@@ -223,6 +224,47 @@ func (m *FTRLModel) Predict(x []struct{ Feature string; Value float64 }, bias fl
 		sum[f] = sumF
 		result += 0.5 * (sumF*sumF - sumSqr)
 	}
+
+	return result
+}
+
+// PredictSIMD FM预测（使用SIMD优化）
+func (m *FTRLModel) PredictSIMD(x []struct{ Feature string; Value float64 }, bias float64, theta []*FTRLModelUnit, ops simd.VectorOps) float64 {
+	result := bias
+	xLen := len(x)
+	
+	if xLen == 0 {
+		return result
+	}
+
+	// 一阶项
+	for i := 0; i < xLen; i++ {
+		result += theta[i].Wi * x[i].Value
+	}
+
+	// 二阶交互项 - 使用SIMD优化
+	// 使用 sum 向量累积 sum[f] = Σ(vi[f] * xi)
+	sum := make([]float64, m.FactorNum)
+	
+	// 对于每个特征，将其 Vi 向量乘以 xi 累加到 sum
+	for i := 0; i < xLen; i++ {
+		xi := x[i].Value
+		// sum += xi * vi (使用 BLAS Axpy: y = alpha*x + y)
+		ops.Axpy(xi, theta[i].Vi, sum)
+	}
+	
+	// 计算 sumSqr = Σ((vi[f] * xi)^2)
+	sumSqrTotal := 0.0
+	for i := 0; i < xLen; i++ {
+		xi := x[i].Value
+		// 使用 SIMD 计算 (vi * xi)^2 的和
+		sumSqrTotal += ops.ScaledSumSquares(theta[i].Vi, xi)
+	}
+	
+	// sum[f]^2 的总和
+	sumTotal := ops.SumSquares(sum)
+	
+	result += 0.5 * (sumTotal - sumSqrTotal)
 
 	return result
 }
@@ -466,6 +508,55 @@ func (m *PredictModel) GetScore(x []struct{ Feature string; Value float64 }, bia
 		}
 		result += 0.5 * (sumF*sumF - sumSqr)
 	}
+
+	// Sigmoid
+	return 1.0 / (1.0 + math.Exp(-result))
+}
+
+// GetScoreSIMD 计算预测得分（包含sigmoid，使用SIMD优化）
+func (m *PredictModel) GetScoreSIMD(x []struct{ Feature string; Value float64 }, bias float64, ops simd.VectorOps) float64 {
+	result := bias
+
+	// 收集有效特征的单元和值
+	validUnits := make([]*PredictModelUnit, 0, len(x))
+	validValues := make([]float64, 0, len(x))
+	
+	for i := 0; i < len(x); i++ {
+		if unit, ok := m.MuMap[x[i].Feature]; ok {
+			// 一阶项
+			result += unit.Wi * x[i].Value
+			validUnits = append(validUnits, unit)
+			validValues = append(validValues, x[i].Value)
+		}
+	}
+	
+	if len(validUnits) == 0 {
+		return 1.0 / (1.0 + math.Exp(-result))
+	}
+
+	// 二阶交互项 - 使用SIMD优化
+	// 使用 sum 向量累积 sum[f] = Σ(vi[f] * xi)
+	sum := make([]float64, m.FactorNum)
+	
+	// 对于每个有效特征，将其 Vi 向量乘以 xi 累加到 sum
+	for i, unit := range validUnits {
+		xi := validValues[i]
+		// sum += xi * vi (使用 BLAS Axpy: y = alpha*x + y)
+		ops.Axpy(xi, unit.Vi, sum)
+	}
+	
+	// 计算 sumSqr = Σ((vi[f] * xi)^2)
+	sumSqrTotal := 0.0
+	for i, unit := range validUnits {
+		xi := validValues[i]
+		// 使用 SIMD 计算 (vi * xi)^2 的和
+		sumSqrTotal += ops.ScaledSumSquares(unit.Vi, xi)
+	}
+	
+	// sum[f]^2 的总和
+	sumTotal := ops.SumSquares(sum)
+	
+	result += 0.5 * (sumTotal - sumSqrTotal)
 
 	// Sigmoid
 	return 1.0 / (1.0 + math.Exp(-result))

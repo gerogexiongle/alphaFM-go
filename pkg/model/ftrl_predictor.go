@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/xiongle/alphaFM-go/pkg/sample"
+	"github.com/xiongle/alphaFM-go/pkg/simd"
 )
 
 // PredictorOption 预测选项
@@ -17,6 +18,7 @@ type PredictorOption struct {
 	ModelNumberType string
 	ThreadsNum      int
 	FactorNum       int
+	SIMDType        simd.VectorOpsType // SIMD优化类型
 }
 
 // NewPredictorOption 创建默认预测选项
@@ -26,15 +28,18 @@ func NewPredictorOption() *PredictorOption {
 		ThreadsNum:      1,
 		ModelFormat:     "txt",
 		ModelNumberType: "double",
+		SIMDType:        simd.VectorOpsScalar, // 默认不使用SIMD
 	}
 }
 
 // FTRLPredictor FTRL预测器
 type FTRLPredictor struct {
-	model   *PredictModel
-	opt     *PredictorOption
-	outFile *os.File
-	outMu   sync.Mutex
+	model    *PredictModel
+	opt      *PredictorOption
+	outFile  *os.File
+	outMu    sync.Mutex
+	simdOps  simd.VectorOps // SIMD运算实例
+	useSIMD  bool           // 是否使用SIMD
 }
 
 // NewFTRLPredictor 创建预测器
@@ -42,6 +47,23 @@ func NewFTRLPredictor(opt *PredictorOption) (*FTRLPredictor, error) {
 	p := &FTRLPredictor{
 		model: NewPredictModel(opt.FactorNum),
 		opt:   opt,
+	}
+
+	// 初始化SIMD
+	if opt.SIMDType != simd.VectorOpsScalar {
+		ops, err := simd.NewVectorOps(opt.SIMDType)
+		if err != nil {
+			fmt.Printf("Warning: SIMD initialization failed, falling back to scalar: %v\n", err)
+			p.simdOps = simd.NewScalarOps()
+			p.useSIMD = false
+		} else {
+			p.simdOps = ops
+			p.useSIMD = true
+			fmt.Printf("SIMD enabled: %s\n", ops.Name())
+		}
+	} else {
+		p.simdOps = simd.NewScalarOps()
+		p.useSIMD = false
 	}
 
 	// 加载模型
@@ -79,7 +101,12 @@ func (p *FTRLPredictor) RunTask(dataBuffer []string) error {
 			xForPredict[j].Value = s.X[j].Value
 		}
 
-		score := p.model.GetScore(xForPredict, p.model.MuBias.Wi)
+		var score float64
+		if p.useSIMD {
+			score = p.model.GetScoreSIMD(xForPredict, p.model.MuBias.Wi, p.simdOps)
+		} else {
+			score = p.model.GetScore(xForPredict, p.model.MuBias.Wi)
+		}
 		results[i] = fmt.Sprintf("%d %.6g", s.Y, score)
 	}
 

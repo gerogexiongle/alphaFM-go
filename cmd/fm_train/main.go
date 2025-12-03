@@ -11,6 +11,7 @@ import (
 
 	"github.com/xiongle/alphaFM-go/pkg/frame"
 	"github.com/xiongle/alphaFM-go/pkg/model"
+	"github.com/xiongle/alphaFM-go/pkg/simd"
 )
 
 func trainHelp() string {
@@ -35,6 +36,7 @@ options:
 -imf <initial_model_format>: set the initial model format, txt or bin	default:txt
 -fvs <force_v_sparse>: if fvs is 1, set vi = 0 whenever wi = 0	default:0
 -mnt <model_number_type>: double or float	default:double
+-simd <simd_type>: SIMD optimization type (scalar, blas)	default:scalar
 `
 }
 
@@ -85,6 +87,7 @@ func main() {
 	initModelFormat := flag.String("imf", "txt", "initial model format")
 	fvs := flag.Int("fvs", 0, "force v sparse")
 	mnt := flag.String("mnt", "double", "model number type")
+	simdType := flag.String("simd", "scalar", "SIMD optimization type")
 
 	flag.Parse()
 
@@ -116,6 +119,15 @@ func main() {
 	opt.InitialModelFormat = *initModelFormat
 	opt.ForceVSparse = *fvs == 1
 	opt.ModelNumberType = *mnt
+	
+	// 解析SIMD类型
+	parsedSIMD, err := simd.ParseVectorOpsType(*simdType)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "invalid simd type: %v\n", err)
+		fmt.Fprint(os.Stderr, trainHelp())
+		os.Exit(1)
+	}
+	opt.SIMDType = parsedSIMD
 
 	if *initModelPath != "" {
 		opt.BInit = true

@@ -7,6 +7,7 @@ import (
 
 	"github.com/xiongle/alphaFM-go/pkg/frame"
 	"github.com/xiongle/alphaFM-go/pkg/model"
+	"github.com/xiongle/alphaFM-go/pkg/simd"
 )
 
 func predictHelp() string {
@@ -20,6 +21,7 @@ options:
 -core <threads_num>: set the number of threads	default:1
 -out <predict_path>: set the predict path
 -mnt <model_number_type>: double or float	default:double
+-simd <simd_type>: SIMD optimization type (scalar, blas)	default:scalar
 `
 }
 
@@ -33,6 +35,7 @@ func main() {
 	core := flag.Int("core", 1, "threads num")
 	out := flag.String("out", "", "predict path")
 	mnt := flag.String("mnt", "double", "model number type")
+	simdType := flag.String("simd", "scalar", "SIMD optimization type")
 
 	flag.Parse()
 
@@ -43,6 +46,15 @@ func main() {
 	opt.ThreadsNum = *core
 	opt.PredictPath = *out
 	opt.ModelNumberType = *mnt
+	
+	// 解析SIMD类型
+	parsedSIMD, err := simd.ParseVectorOpsType(*simdType)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "invalid simd type: %v\n", err)
+		fmt.Fprint(os.Stderr, predictHelp())
+		os.Exit(1)
+	}
+	opt.SIMDType = parsedSIMD
 
 	// 验证参数
 	if opt.ModelPath == "" {
