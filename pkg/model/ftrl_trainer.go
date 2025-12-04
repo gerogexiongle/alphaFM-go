@@ -70,9 +70,6 @@ type FTRLTrainer struct {
 	opt          *TrainerOption
 	simdOps      simd.VectorOps // SIMD运算实例
 	useSIMD      bool           // 是否使用SIMD
-	// 预分配的缓冲区（减少内存分配）
-	sumBuf       []float64      // sum 缓冲区 [factorNum]
-	viRowBuf     []float64      // Vi 行缓冲区 [factorNum]
 }
 
 // NewFTRLTrainer 创建训练器
@@ -81,9 +78,6 @@ func NewFTRLTrainer(opt *TrainerOption) *FTRLTrainer {
 		model:    NewFTRLModel(opt.FactorNum, opt.InitMean, opt.InitStdev),
 		lockPool: lock.NewLockPool(),
 		opt:      opt,
-		// 预分配缓冲区
-		sumBuf:   make([]float64, opt.FactorNum),
-		viRowBuf: make([]float64, opt.FactorNum),
 	}
 	
 	// 初始化SIMD
@@ -189,7 +183,7 @@ func (t *FTRLTrainer) train(y int, x []sample.FeatureValue) {
 	// 预测和计算sum（使用SIMD优化）
 	bias := thetaBias.Wi
 	var p float64
-	sum := t.sumBuf[:t.model.FactorNum] // 复用预分配的缓冲区
+	var sum []float64  // 每次分配新的sum数组，避免并发冲突
 	
 	if t.useSIMD && xLen > 0 {
 		// SIMD 优化版本：同时计算预测值和 sum
@@ -197,7 +191,8 @@ func (t *FTRLTrainer) train(y int, x []sample.FeatureValue) {
 	} else {
 		// 标量版本
 		p = t.predictScalar(x, bias, theta)
-		// 计算sum
+		// 计算sum - 每次新分配
+		sum = make([]float64, t.model.FactorNum)
 		for f := 0; f < t.model.FactorNum; f++ {
 			sumF := 0.0
 			for i := 0; i < xLen; i++ {
@@ -263,13 +258,9 @@ func (t *FTRLTrainer) predictAndSumSIMD(x []sample.FeatureValue, bias float64, t
 	factorNum := t.model.FactorNum
 	
 	result := bias
-	sum := t.sumBuf[:factorNum]
+	// 每次分配新的sum数组，避免并发冲突
+	sum := make([]float64, factorNum)
 	
-	// 清零 sum
-	for f := 0; f < factorNum; f++ {
-		sum[f] = 0.0
-	}
-
 	// 一阶项
 	for i := 0; i < xLen; i++ {
 		result += theta[i].Wi * x[i].Value
