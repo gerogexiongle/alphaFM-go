@@ -33,7 +33,7 @@ GO_PREDICTION="$BENCHMARK_DIR/go_prediction.txt"
 FACTOR_DIM=64
 
 # SIMD 模式: "blas" (使用 BLAS 库加速) 或 "scalar" (纯标量计算)
-SIMD_MODE="scalar"
+SIMD_MODE="blas"
 
 # 并行线程数
 THREAD_NUM=4
